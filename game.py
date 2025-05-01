@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
+import random
 
 
 BOARD_SIZE = 15
@@ -129,12 +130,67 @@ def start_game(mode):
         print("Starting AI vs AI mode...")
         # Initialize AI vs AI logic here
     elif mode == "User vs AI":
-        print("Starting User vs AI mode...")
-        # Initialize User vs AI logic here
+        # Show another window for AI strategy selection
+        ai_strategy_window = tk.Toplevel()
+        ai_strategy_window.title("Select AI Strategy")
+        ai_strategy_window.geometry("300x200")
+
+        strategy_label = tk.Label(ai_strategy_window, text="Select AI Strategy", font=("Arial", 14))
+        strategy_label.pack(pady=20)
+
+        random_button = tk.Button(ai_strategy_window, text="Random", command=lambda: start_user_vs_ai("Random", ai_strategy_window))
+        random_button.pack(pady=5)
+
+        minimax_button = tk.Button(ai_strategy_window, text="Minimax", command=lambda: start_user_vs_ai("Minimax", ai_strategy_window))
+        minimax_button.pack(pady=5)
+
+        alpha_beta_button = tk.Button(ai_strategy_window, text="Alpha-Beta Pruning", command=lambda: start_user_vs_ai("Alpha-Beta Pruning", ai_strategy_window))
+        alpha_beta_button.pack(pady=5)
     elif mode == "User vs User":
         print("Starting User vs User mode...")
         # Proceed with the existing game logic
         window.deiconify()
+
+def handle_click_user_vs_ai(event):
+    global turn, random_agent
+
+    # Ensure it's the user's turn
+    if turn == "black":
+        col = round((event.x - CELL_SIZE // 2) / CELL_SIZE)
+        row = round((event.y - CELL_SIZE // 2) / CELL_SIZE)
+
+        if row < 0 or row >= BOARD_SIZE or col < 0 or col >= BOARD_SIZE:
+            return
+        if board[row][col] is not None:
+            return
+
+        # User's move
+        board[row][col] = "black"
+        draw_piece(row, col, "black")
+
+        printboard()
+        if checkwin("black"):
+            messagebox.showinfo("Game Over", "Black wins!")
+            canvas.unbind("<Button-1>")
+            return
+
+        # Switch turn to AI
+        turn = "white"
+
+        # Trigger AI's move after user's move
+        canvas.after(500, random_agent_move)
+
+
+def start_user_vs_ai(strategy, ai_strategy_window):
+    ai_strategy_window.destroy()
+    print(f"Starting User vs AI mode with {strategy} strategy...")
+
+    if strategy == "Random":
+        global random_agent
+        random_agent = RandomAgent(board, "white")
+        canvas.bind("<Button-1>", handle_click_user_vs_ai)
+
+    window.deiconify()
 
 # Create a welcome screen
 welcome_window = tk.Toplevel()
@@ -155,5 +211,37 @@ user_vs_user_button.pack(pady=5)
 
 # Hide the main game window until a mode is selected
 window.withdraw()
+def random_agent_move():
+    global turn, random_agent
+
+    if turn == "white":
+        random_agent.make_move()
+
+        if checkwin("white"):
+            messagebox.showinfo("Game Over", "White wins!")
+            canvas.unbind("<Button-1>")
+            return
+
+        turn = "black"
+
+class RandomAgent:
+    def __init__(self, board, turn):
+        self.board = board
+        self.turn = turn
+
+    def get_random_move(self):
+        free_spots = [(row, col) for row in range(BOARD_SIZE) for col in range(BOARD_SIZE) if self.board[row][col] is None]
+        if free_spots:
+            return random.choice(free_spots)
+        return None
+
+    def make_move(self):
+        move = self.get_random_move()
+        if move:
+            row, col = move
+            self.board[row][col] = self.turn
+            draw_piece(row, col, self.turn)
+
+            printboard()
 
 window.mainloop()
