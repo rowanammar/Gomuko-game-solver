@@ -121,4 +121,39 @@ def checkwin(color):
 
 canvas.bind("<Button-1>", handle_click)
 
+# Adding a welcome screen with game mode selection
+
+def start_game(mode):
+    welcome_window.destroy()
+    if mode == "AI vs AI":
+        print("Starting AI vs AI mode...")
+        # Initialize AI vs AI logic here
+    elif mode == "User vs AI":
+        print("Starting User vs AI mode...")
+        # Initialize User vs AI logic here
+    elif mode == "User vs User":
+        print("Starting User vs User mode...")
+        # Proceed with the existing game logic
+        window.deiconify()
+
+# Create a welcome screen
+welcome_window = tk.Toplevel()
+welcome_window.title("Welcome to Gomoku")
+welcome_window.geometry("300x200")
+
+welcome_label = tk.Label(welcome_window, text="Select Game Mode", font=("Arial", 14))
+welcome_label.pack(pady=20)
+
+ai_vs_ai_button = tk.Button(welcome_window, text="AI vs AI", command=lambda: start_game("AI vs AI"))
+ai_vs_ai_button.pack(pady=5)
+
+user_vs_ai_button = tk.Button(welcome_window, text="User vs AI", command=lambda: start_game("User vs AI"))
+user_vs_ai_button.pack(pady=5)
+
+user_vs_user_button = tk.Button(welcome_window, text="User vs User", command=lambda: start_game("User vs User"))
+user_vs_user_button.pack(pady=5)
+
+# Hide the main game window until a mode is selected
+window.withdraw()
+
 window.mainloop()
