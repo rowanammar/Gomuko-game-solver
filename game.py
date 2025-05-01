@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 
 
 BOARD_SIZE = 15
@@ -30,7 +31,7 @@ for i in range(BOARD_SIZE):
 
 
 turn = "black"
-# Function to draw a piece
+
 def draw_piece(row, col, color):
     center_x = col * CELL_SIZE + CELL_SIZE // 2
     center_y = row * CELL_SIZE + CELL_SIZE // 2
@@ -39,7 +40,7 @@ def draw_piece(row, col, color):
                        center_x + radius, center_y + radius,
                        fill=color)
 
-# Function to handle mouse click
+
 def handle_click(event):
     global turn
     # bngyb makan eldosa
@@ -51,17 +52,65 @@ def handle_click(event):
         return
     if board[row][col] is not None:
         return
-
     #save el move fel 2d array bta3na
     board[row][col] = turn
-
     draw_piece(row, col, turn)
+
+    printboard()
+    if checkwin(turn):
+        messagebox.showinfo("Game Over", f"{turn.capitalize()} wins!")
+        # 3shan el game yo2af        
+        canvas.unbind("<Button-1>")
 
     
     if turn == "black":
         turn = "white"
     else:
         turn = "black"
+
+
+def printboard():
+    for row in range(BOARD_SIZE):
+        for col in range(BOARD_SIZE):
+            print(board[row][col], end=" ")
+        print("   \n")
+
+def checkwin(color):
+    for row in range(BOARD_SIZE):
+        for col in range(BOARD_SIZE):
+            if board[row][col] == color:
+                # horizontal 
+                if col + 4 < BOARD_SIZE:
+                    if board[row][col + 1] == color and \
+                       board[row][col + 2] == color and \
+                       board[row][col + 3] == color and \
+                       board[row][col + 4] == color:
+                        return True
+                # vertical
+                if row + 4 < BOARD_SIZE:
+                    if board[row + 1][col] == color and \
+                       board[row + 2][col] == color and \
+                       board[row + 3][col] == color and \
+                       board[row + 4][col] == color:
+                        return True
+
+                # diagonal
+                if row + 4 < BOARD_SIZE and col + 4 < BOARD_SIZE:
+                    if board[row + 1][col + 1] == color and \
+                       board[row + 2][col + 2] == color and \
+                       board[row + 3][col + 3] == color and \
+                       board[row + 4][col + 4] == color:
+                        return True
+
+                # diagonal eltany
+                if row + 4 < BOARD_SIZE and col - 4 >= 0:
+                    if board[row + 1][col - 1] == color and \
+                       board[row + 2][col - 2] == color and \
+                       board[row + 3][col - 3] == color and \
+                       board[row + 4][col - 4] == color:
+                        return True
+
+    return False
 
 canvas.bind("<Button-1>", handle_click)
 
