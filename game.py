@@ -70,10 +70,17 @@ def handle_click(event):
 
 
 def printboard():
+    print("  " + " ".join(f"{i:2}" for i in range(BOARD_SIZE)))  # Print column indices
     for row in range(BOARD_SIZE):
+        row_str = f"{row:2} "  # Print row index
         for col in range(BOARD_SIZE):
-            print(board[row][col], end=" ")
-        print("   \n")
+            if board[row][col] == "black":
+                row_str += "B "
+            elif board[row][col] == "white":
+                row_str += "W "
+            else:
+                row_str += ". "
+        print(row_str)
 
 def checkwin(color):
     for row in range(BOARD_SIZE):
