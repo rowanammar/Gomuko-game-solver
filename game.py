@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
 import random
-import copy # 3shan lama el ai bygrb moves fel actual board eldonya btbooz
 
 
 
@@ -71,7 +70,7 @@ def handle_click(event):
     else:
         turn = "black"
 
-
+# bytb3 el board fel console cuz debugging
 def printboard():
     print("  " + " ".join(f"{i:2}" for i in range(BOARD_SIZE)))  # Print column indices
     for row in range(BOARD_SIZE):
@@ -84,6 +83,7 @@ def printboard():
             else:
                 row_str += ". "
         print(row_str)
+
 
 def checkwin(color):
     for row in range(BOARD_SIZE):
@@ -285,21 +285,36 @@ class MinimaxAgent:
         #bn3ed el pieces ely fel board 3shan awll 2 moves yb2o fixed
         total_pieces = sum(1 for row in range(BOARD_SIZE) for col in range(BOARD_SIZE) if self.board[row][col] is not None)
 
-        # awl move tb2a fel center
+        # awl move tb2a gamb el opponent's piece
         if total_pieces == 1:
-            center = BOARD_SIZE // 2
-            if self.board[center][center] is None:
-                row, col = center, center
-            else:
-                #law el center mmta5ed 5od ay cell gambo fadya 
-                if center + 1 < BOARD_SIZE and self.board[center][center + 1] is None:
-                    row, col = center, center + 1
-                elif center - 1 >= 0 and self.board[center][center - 1] is None:
-                    row, col = center, center - 1
-                elif center + 1 < BOARD_SIZE and self.board[center + 1][center] is None:
-                    row, col = center + 1, center
-                elif center - 1 >= 0 and self.board[center - 1][center] is None:
-                    row, col = center - 1, center
+            # Find the opponent's only piece
+            for r in range(BOARD_SIZE):
+                for c in range(BOARD_SIZE):
+                    if self.board[r][c] == self.opponent:
+                        opp_row, opp_col = r, c
+                        break
+                else:
+                    continue
+                break
+
+            # Try placing next to the opponent's piece
+            if opp_row - 1 >= 0 and self.board[opp_row - 1][opp_col] is None:
+                row, col = opp_row - 1, opp_col  # Up
+            elif opp_row + 1 < BOARD_SIZE and self.board[opp_row + 1][opp_col] is None:
+                row, col = opp_row + 1, opp_col  # Down
+            elif opp_col - 1 >= 0 and self.board[opp_row][opp_col - 1] is None:
+                row, col = opp_row, opp_col - 1  # Left
+            elif opp_col + 1 < BOARD_SIZE and self.board[opp_row][opp_col + 1] is None:
+                row, col = opp_row, opp_col + 1  # Right
+            elif opp_row - 1 >= 0 and opp_col - 1 >= 0 and self.board[opp_row - 1][opp_col - 1] is None:
+                row, col = opp_row - 1, opp_col - 1  # Up-Left
+            elif opp_row - 1 >= 0 and opp_col + 1 < BOARD_SIZE and self.board[opp_row - 1][opp_col + 1] is None:
+                row, col = opp_row - 1, opp_col + 1  # Up-Right
+            elif opp_row + 1 < BOARD_SIZE and opp_col - 1 >= 0 and self.board[opp_row + 1][opp_col - 1] is None:
+                row, col = opp_row + 1, opp_col - 1  # Down-Left
+            elif opp_row + 1 < BOARD_SIZE and opp_col + 1 < BOARD_SIZE and self.board[opp_row + 1][opp_col + 1] is None:
+                row, col = opp_row + 1, opp_col + 1  # Down-Right
+
                 
         # 3l move eltanya tb2a ay haga gamb el ola
         elif total_pieces == 3:
@@ -320,7 +335,7 @@ class MinimaxAgent:
                             row, col = r, c - 1
                             break
         else:
-            score, move = self.minimax(copy.deepcopy(self.board), self.depth, True)
+            score, move = self.minimax(self.depth, True)
             row, col = move
 
         self.board[row][col] = self.turn
@@ -328,9 +343,11 @@ class MinimaxAgent:
         printboard()
 
 
-    def minimax(self, board, depth, is_maximizing):
+    def minimax(self, depth, is_maximizing):
         if depth == 0 or checkwin(self.turn) or checkwin(self.opponent):
-            return self.evaluate(board), None #5lsna tadweer bel depth elmatloob aw had keseb
+            player = self.turn if is_maximizing else self.opponent
+            return self.evaluate(board, player), None #5lsna tadweer bel depth elmatloob aw had keseb
+ 
 
         best_score = -1000000000000000 if is_maximizing else 100000000000000
         best_move = None
@@ -340,7 +357,7 @@ class MinimaxAgent:
                 if board[row][col] is None:
                      #bnlef 3la koll el cells elfadya w bngarab nhot our piec law max aw opponent's law mini
                     board[row][col] = self.turn if is_maximizing else self.opponent
-                    score, _ = self.minimax(board, depth - 1, not is_maximizing) 
+                    score, _ = self.minimax(depth - 1, not is_maximizing) 
                     board[row][col] = None
 
                     if is_maximizing:
@@ -354,7 +371,8 @@ class MinimaxAgent:
 
         return best_score, best_move
 
-    def evaluate(self, board):
+    def evaluate(self, board , player):
+        opponent = self.opponent if player == self.turn else self.turn
         score = 0
 
         # bndy heuristic score , kol ma el pieces ely wara b3d b nfs ellon aktar kol ma ba2a ahsan
@@ -368,11 +386,10 @@ class MinimaxAgent:
         score -= self.count(board, self.opponent, 2) * 100
 
         return score
-
     def count(self, board, color, length):
         #function bt3d 3dd el pieces ely wara b3d nfs elllon
         count = 0
-        
+
 
         for row in range(BOARD_SIZE):
             for col in range(BOARD_SIZE):
@@ -392,11 +409,11 @@ class MinimaxAgent:
                     if all(board[row + i][col + i] == color for i in range(length)):
                         count += 1
 
-                # Diagonal (tany
+                # Diagonal tany
                 if row + length - 1 < BOARD_SIZE and col - length + 1 >= 0:
                     if all(board[row + i][col - i] == color for i in range(length)):
                         count += 1
 
         return count
-
+   
 window.mainloop()
