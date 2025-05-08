@@ -122,16 +122,15 @@ class RandomAgent:
 
 
 def main_menu():
-    print("=== Gomoku Console ===")
-    print("1. Human vs RandomAgent")
-    print("2. Human vs AlphaBetaAgent")
-    print("3. RandomAgent vs AlphaBetaAgent")
-    print("4. Minimax vs AlphaBetaAgent")
-    print("5. Human vs MinimaxAgent")
-    print("6. AI vs AI (Minimax vs AlphaBeta)")
+    print("\n===== Gomoku Game =====")
+    print("1. Human vs Random AI")
+    print("2. Human vs AlphaBeta AI")
+    print("3. Random AI vs AlphaBeta AI")
+    print("4. Minimax AI vs AlphaBeta AI")
+    print("5. Human vs Minimax AI")
+    print("6. AI vs AI (Minimax vs AlphaBeta) with delay")
     print("7. Exit")
-    choice = input("Select mode: ")
-    return choice.strip()
+    return input("Enter your choice: ")
 
 
 def human_vs_random():
@@ -393,182 +392,6 @@ class AlphaBetaAgent:
             self.engine.printboard()
 
 
-class MinimaxAgent:
-    def __init__(self, engine, color, depth=1):
-        self.engine = engine
-        self.color = color  # 'black' or 'white'
-        self.opponent = "black" if color == "white" else "white"
-        self.depth = depth
-
-    def get_move(self):
-        board = self.engine.board
-        BOARD_SIZE = self.engine.BOARD_SIZE
-
-        def checkwin(player):
-            return self.engine.checkwin(player)
-
-        def printboard():
-            self.engine.printboard()
-
-        def draw_piece(row, col, color):
-            pass  # GUI handles drawing, so do nothing here
-
-        # hanshoof law mommken aksab fel move elgaya , if so hal3bha
-        for row in range(BOARD_SIZE):
-            for col in range(BOARD_SIZE):
-                if board[row][col] is None:
-                    board[row][col] = self.color
-                    if checkwin(self.color):
-                        board[row][col] = None
-                        return (row, col)
-                    board[row][col] = None
-
-        # lw el opponenet howa ell hayksab block el move
-        for row in range(BOARD_SIZE):
-            for col in range(BOARD_SIZE):
-                if board[row][col] is None:
-                    board[row][col] = self.opponent
-                    if checkwin(self.opponent):
-                        board[row][col] = None
-                        return (row, col)
-                    board[row][col] = None
-
-        # bn3ed el pieces ely fel board 3shan awll 2 moves yb2o fixed
-        total_pieces = sum(
-            1
-            for row in range(BOARD_SIZE)
-            for col in range(BOARD_SIZE)
-            if board[row][col] is not None
-        )
-
-        # awl move tb2a gamb el opponent's piece
-        if total_pieces == 1:
-            for r in range(BOARD_SIZE):
-                for c in range(BOARD_SIZE):
-                    if board[r][c] == self.opponent:
-                        opp_row, opp_col = r, c
-                        break
-                else:
-                    continue
-                break
-            # Try placing next to the opponent's piece
-            if opp_row - 1 >= 0 and board[opp_row - 1][opp_col] is None:
-                return (opp_row - 1, opp_col)
-            elif opp_row + 1 < BOARD_SIZE and board[opp_row + 1][opp_col] is None:
-                return (opp_row + 1, opp_col)
-            elif opp_col - 1 >= 0 and board[opp_row][opp_col - 1] is None:
-                return (opp_row, opp_col - 1)
-            elif opp_col + 1 < BOARD_SIZE and board[opp_row][opp_col + 1] is None:
-                return (opp_row, opp_col + 1)
-            elif (
-                opp_row - 1 >= 0
-                and opp_col - 1 >= 0
-                and board[opp_row - 1][opp_col - 1] is None
-            ):
-                return (opp_row - 1, opp_col - 1)
-            elif (
-                opp_row - 1 >= 0
-                and opp_col + 1 < BOARD_SIZE
-                and board[opp_row - 1][opp_col + 1] is None
-            ):
-                return (opp_row - 1, opp_col + 1)
-            elif (
-                opp_row + 1 < BOARD_SIZE
-                and opp_col - 1 >= 0
-                and board[opp_row + 1][opp_col - 1] is None
-            ):
-                return (opp_row + 1, opp_col - 1)
-            elif (
-                opp_row + 1 < BOARD_SIZE
-                and opp_col + 1 < BOARD_SIZE
-                and board[opp_row + 1][opp_col + 1] is None
-            ):
-                return (opp_row + 1, opp_col + 1)
-
-        # 3l move eltanya tb2a ay haga gamb el ola
-        elif total_pieces == 3:
-            for r in range(BOARD_SIZE):
-                for c in range(BOARD_SIZE):
-                    if board[r][c] == self.color:
-                        if r + 1 < BOARD_SIZE and board[r + 1][c] is None:
-                            return (r + 1, c)
-                        elif r - 1 >= 0 and board[r - 1][c] is None:
-                            return (r - 1, c)
-                        elif c + 1 < BOARD_SIZE and board[r][c + 1] is None:
-                            return (r, c + 1)
-                        elif c - 1 >= 0 and board[r][c - 1] is None:
-                            return (r, c - 1)
-        else:
-            score, move = self.minimax(self.depth, True, board, checkwin)
-            return move
-
-    def make_move(self):
-        move = self.get_move()
-        if move:
-            row, col = move
-            self.engine.make_move(row, col, self.color)
-            self.engine.printboard()
-
-    def minimax(self, depth, is_maximizing, board, checkwin):
-        if depth == 0 or checkwin(self.color) or checkwin(self.opponent):
-            player = self.color if is_maximizing else self.opponent
-            return self.evaluate(board, player), None
-
-        BOARD_SIZE = self.engine.BOARD_SIZE
-        best_score = -1000000000000000 if is_maximizing else 100000000000000
-        best_move = None
-
-        for row in range(BOARD_SIZE):
-            for col in range(BOARD_SIZE):
-                if board[row][col] is None:
-                    board[row][col] = self.color if is_maximizing else self.opponent
-                    score, _ = self.minimax(
-                        depth - 1, not is_maximizing, board, checkwin
-                    )
-                    board[row][col] = None
-
-                    if is_maximizing:
-                        if score > best_score:
-                            best_score = score
-                            best_move = (row, col)
-                    else:
-                        if score < best_score:
-                            best_score = score
-                            best_move = (row, col)
-
-        return best_score, best_move
-
-    def evaluate(self, board, player):
-        opponent = self.opponent if player == self.color else self.color
-        score = 0
-        score += self.count(board, self.color, 4) * 10000
-        score += self.count(board, self.color, 3) * 1000
-        score += self.count(board, self.color, 2) * 100
-        score -= self.count(board, opponent, 4) * 10000
-        score -= self.count(board, opponent, 3) * 1000
-        score -= self.count(board, opponent, 2) * 100
-        return score
-
-    def count(self, board, color, length):
-        count = 0
-        BOARD_SIZE = self.engine.BOARD_SIZE
-        for row in range(BOARD_SIZE):
-            for col in range(BOARD_SIZE):
-                if col + length - 1 < BOARD_SIZE:
-                    if all(board[row][col + i] == color for i in range(length)):
-                        count += 1
-                if row + length - 1 < BOARD_SIZE:
-                    if all(board[row + i][col] == color for i in range(length)):
-                        count += 1
-                if row + length - 1 < BOARD_SIZE and col + length - 1 < BOARD_SIZE:
-                    if all(board[row + i][col + i] == color for i in range(length)):
-                        count += 1
-                if row + length - 1 < BOARD_SIZE and col - length + 1 >= 0:
-                    if all(board[row + i][col - i] == color for i in range(length)):
-                        count += 1
-        return count
-
-
 def ai_vs_ai_minmax_alphabeta():
     engine = GameEngine()
     black_agent = MinimaxAgent(engine, "black")
@@ -589,6 +412,236 @@ def ai_vs_ai_minmax_alphabeta():
         engine.printboard()
         move_num += 1
         time.sleep(0.2)
+    winner = engine.get_winner()
+    if winner:
+        print(f"{winner.capitalize()} wins!")
+    else:
+        print("Draw!")
+
+
+class MinimaxAgent:
+    def __init__(self, engine, color, depth=1):
+        self.engine = engine
+        self.color = color
+        self.opponent = "black" if color == "white" else "white"
+        self.depth = depth
+
+    def get_move(self):
+        # Check for immediate winning move
+        for row, col in self.engine.available_moves():
+            self.engine.board[row][col] = self.color
+            if self.engine.checkwin(self.color):
+                self.engine.board[row][col] = None
+                return (row, col)
+            self.engine.board[row][col] = None
+
+        # Check for blocking opponent's winning move
+        for row, col in self.engine.available_moves():
+            self.engine.board[row][col] = self.opponent
+            if self.engine.checkwin(self.opponent):
+                self.engine.board[row][col] = None
+                return (row, col)
+            self.engine.board[row][col] = None
+
+        # Count total pieces to handle early game moves
+        total_pieces = sum(
+            1
+            for row in range(self.engine.BOARD_SIZE)
+            for col in range(self.engine.BOARD_SIZE)
+            if self.engine.board[row][col] is not None
+        )
+
+        # Special case for when there's only one piece on the board
+        if total_pieces == 1:
+            for r in range(self.engine.BOARD_SIZE):
+                for c in range(self.engine.BOARD_SIZE):
+                    if self.engine.board[r][c] == self.opponent:
+                        opp_row, opp_col = r, c
+                        break
+                else:
+                    continue
+                break
+
+            # Try to place near opponent
+            neighbors = [
+                (opp_row - 1, opp_col),
+                (opp_row + 1, opp_col),
+                (opp_row, opp_col - 1),
+                (opp_row, opp_col + 1),
+                (opp_row - 1, opp_col - 1),
+                (opp_row - 1, opp_col + 1),
+                (opp_row + 1, opp_col - 1),
+                (opp_row + 1, opp_col + 1),
+            ]
+
+            for row, col in neighbors:
+                if (
+                    0 <= row < self.engine.BOARD_SIZE
+                    and 0 <= col < self.engine.BOARD_SIZE
+                    and self.engine.board[row][col] is None
+                ):
+                    return (row, col)
+
+        # Special case for early game (3 pieces)
+        elif total_pieces == 3:
+            for r in range(self.engine.BOARD_SIZE):
+                for c in range(self.engine.BOARD_SIZE):
+                    if self.engine.board[r][c] == self.color:
+                        neighbors = [
+                            (r + 1, c),
+                            (r - 1, c),
+                            (r, c + 1),
+                            (r, c - 1),
+                        ]
+                        for row, col in neighbors:
+                            if (
+                                0 <= row < self.engine.BOARD_SIZE
+                                and 0 <= col < self.engine.BOARD_SIZE
+                                and self.engine.board[row][col] is None
+                            ):
+                                return (row, col)
+
+        # Use minimax for more complex positions
+        else:
+            score, move = self.minimax(self.depth, True)
+            return move
+
+        # Fallback to random move if no good move found
+        return random.choice(self.engine.available_moves())
+
+    def minimax(self, depth, is_maximizing):
+        # Terminal conditions
+        if depth == 0:
+            return self.evaluate(self.engine.board, self.color), None
+
+        for color in [self.color, self.opponent]:
+            for row in range(self.engine.BOARD_SIZE):
+                for col in range(self.engine.BOARD_SIZE):
+                    if self.engine.board[row][col] == color:
+                        if self.engine.checkwin(color):
+                            if color == self.color:
+                                return 1000000, None
+                            else:
+                                return -1000000, None
+
+        best_score = -float("inf") if is_maximizing else float("inf")
+        best_move = None
+
+        for row, col in self.engine.available_moves():
+            # Make the move
+            self.engine.board[row][col] = self.color if is_maximizing else self.opponent
+
+            # Recursive call
+            score, _ = self.minimax(depth - 1, not is_maximizing)
+
+            # Undo the move
+            self.engine.board[row][col] = None
+
+            # Update best score
+            if is_maximizing:
+                if score > best_score:
+                    best_score = score
+                    best_move = (row, col)
+            else:
+                if score < best_score:
+                    best_score = score
+                    best_move = (row, col)
+
+        return best_score, best_move
+
+    def evaluate(self, board, player):
+        score = 0
+        score += self.count(board, self.color, 4) * 10000
+        score += self.count(board, self.color, 3) * 1000
+        score += self.count(board, self.color, 2) * 100
+        score -= self.count(board, self.opponent, 4) * 10000
+        score -= self.count(board, self.opponent, 3) * 1000
+        score -= self.count(board, self.opponent, 2) * 100
+        return score
+
+    def count(self, board, color, length):
+        count = 0
+        for row in range(self.engine.BOARD_SIZE):
+            for col in range(self.engine.BOARD_SIZE):
+                # Horizontal
+                if col + length - 1 < self.engine.BOARD_SIZE:
+                    if all(board[row][col + i] == color for i in range(length)):
+                        count += 1
+                # Vertical
+                if row + length - 1 < self.engine.BOARD_SIZE:
+                    if all(board[row + i][col] == color for i in range(length)):
+                        count += 1
+                # Diagonal down-right
+                if (
+                    row + length - 1 < self.engine.BOARD_SIZE
+                    and col + length - 1 < self.engine.BOARD_SIZE
+                ):
+                    if all(board[row + i][col + i] == color for i in range(length)):
+                        count += 1
+                # Diagonal down-left
+                if row + length - 1 < self.engine.BOARD_SIZE and col - length + 1 >= 0:
+                    if all(board[row + i][col - i] == color for i in range(length)):
+                        count += 1
+        return count
+
+    def make_move(self):
+        move = self.get_move()
+        if move:
+            row, col = move
+            self.engine.make_move(row, col, self.color)
+            self.engine.printboard()
+
+
+def human_vs_minmax():
+    engine = GameEngine()
+    ai = MinimaxAgent(engine, "white")
+    while not engine.is_game_over():
+        engine.printboard()
+        if engine.get_current_player() == "black":
+            try:
+                row = int(input("Enter row: "))
+                col = int(input("Enter col: "))
+            except ValueError:
+                print("Invalid input. Please enter numbers.")
+                continue
+            if not engine.play_move(row, col):
+                print("Invalid move, try again.")
+                continue
+        else:
+            print("AI (white) is thinking...")
+            move = ai.get_move()
+            if move:
+                row, col = move
+                engine.play_move(row, col)
+        if engine.is_game_over():
+            engine.printboard()
+            winner = engine.get_winner()
+            if winner:
+                print(f"{winner.capitalize()} wins!")
+            else:
+                print("Draw!")
+            break
+
+
+def minmax_vs_alphabeta():
+    engine = GameEngine()
+    black_agent = MinimaxAgent(engine, "black")
+    white_agent = AlphaBetaAgent(engine, "white")
+    move_num = 1
+    while not engine.is_game_over():
+        print(f"Move {move_num}: {engine.get_current_player().capitalize()}'s turn")
+        if engine.get_current_player() == "black":
+            move = black_agent.get_move()
+            if move:
+                row, col = move
+                engine.play_move(row, col)
+        else:
+            move = white_agent.get_move()
+            if move:
+                row, col = move
+                engine.play_move(row, col)
+        engine.printboard()
+        move_num += 1
     winner = engine.get_winner()
     if winner:
         print(f"{winner.capitalize()} wins!")
