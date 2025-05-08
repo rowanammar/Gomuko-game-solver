@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import messagebox
 from game import GameEngine, RandomAgent, MinimaxAgent, AlphaBetaAgent
 import time
+import random
 
 # --- GUI Setup ---
 window = tk.Tk()
@@ -162,6 +163,15 @@ def ai_vs_ai_minmax_alphabeta_gui():
     black_agent = MinimaxAgent(engine, "black")
     white_agent = AlphaBetaAgent(engine, "white")
     move_num = 1
+
+    # Make first move random in the center region of the board
+    center_range = range(5, engine.BOARD_SIZE - 5)
+    random_row = random.choice(center_range)
+    random_col = random.choice(center_range)
+    engine.play_move(random_row, random_col)
+    update_board()
+    engine.printboard()
+    move_num += 1
 
     def play_next():
         nonlocal move_num

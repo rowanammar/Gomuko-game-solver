@@ -125,10 +125,10 @@ def main_menu():
     print("\n===== Gomoku Game =====")
     print("1. Human vs Random AI")
     print("2. Human vs AlphaBeta AI")
-    print("3. Random AI vs AlphaBeta AI")
+    print("3. Human vs Minimax AI")
     print("4. Minimax AI vs AlphaBeta AI")
-    print("5. Human vs Minimax AI")
-    print("6. AI vs AI (Minimax vs AlphaBeta) with delay")
+    print("5. Random AI vs AlphaBeta AI")
+    print("6. AI vs AI (Minimax vs AlphaBeta)")
     print("7. Exit")
     return input("Enter your choice: ")
 
@@ -397,6 +397,16 @@ def ai_vs_ai_minmax_alphabeta():
     black_agent = MinimaxAgent(engine, "black")
     white_agent = AlphaBetaAgent(engine, "white")
     move_num = 1
+
+    # Make first move random in the center region of the board
+    center_range = range(5, engine.BOARD_SIZE - 5)
+    random_row = random.choice(center_range)
+    random_col = random.choice(center_range)
+    print(f"Starting with a random move at position ({random_row}, {random_col})")
+    engine.play_move(random_row, random_col)
+    engine.printboard()
+    move_num += 1
+
     while not engine.is_game_over():
         print(f"Move {move_num}: {engine.get_current_player().capitalize()}'s turn")
         if engine.get_current_player() == "black":
@@ -504,7 +514,7 @@ class MinimaxAgent:
         # Use minimax for more complex positions
         else:
             score, move = self.minimax(self.depth, True)
-            return move
+        return move
 
         # Fallback to random move if no good move found
         return random.choice(self.engine.available_moves())
@@ -657,11 +667,11 @@ if __name__ == "__main__":
         elif choice == "2":
             human_vs_alphabeta()
         elif choice == "3":
-            random_vs_alphabeta()
+            human_vs_minmax()
         elif choice == "4":
             minmax_vs_alphabeta()
         elif choice == "5":
-            human_vs_minmax()
+            random_vs_alphabeta()
         elif choice == "6":
             ai_vs_ai_minmax_alphabeta()
         elif choice == "7":
