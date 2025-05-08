@@ -2,10 +2,15 @@
 import tkinter as tk
 from tkinter import messagebox
 from game import GameEngine, RandomAgent, MinimaxAgent, AlphaBetaAgent
+import time
 
 # --- GUI Setup ---
 window = tk.Tk()
 window.title("Gomoku Game")
+
+# Player indicator label
+player_indicator = tk.Label(window, text="", font=("Arial", 14))
+player_indicator.pack(pady=10)
 
 # Center the window on the screen
 screen_width = window.winfo_screenwidth()
@@ -31,9 +36,6 @@ for i in range(BOARD_SIZE):
     y = i * CELL_SIZE + CELL_SIZE // 2
     canvas.create_line(CELL_SIZE // 2, y, WINDOW_SIZE - CELL_SIZE // 2, y)
 
-turn = "black"
-ai_agent = None
-
 
 def draw_piece(row, col, color):
     center_x = col * CELL_SIZE + CELL_SIZE // 2
@@ -48,60 +50,103 @@ def draw_piece(row, col, color):
     )
 
 
+def update_board():
+    canvas.delete("piece")
+    for row in range(BOARD_SIZE):
+        for col in range(BOARD_SIZE):
+            color = engine.board[row][col]
+            if color:
+                center_x = col * CELL_SIZE + CELL_SIZE // 2
+                center_y = row * CELL_SIZE + CELL_SIZE // 2
+                radius = 17
+                canvas.create_oval(
+                    center_x - radius,
+                    center_y - radius,
+                    center_x + radius,
+                    center_y + radius,
+                    fill=color,
+                    tags="piece",
+                )
+
+
 def handle_click(event):
-    global turn
     col = round((event.x - CELL_SIZE // 2) / CELL_SIZE)
     row = round((event.y - CELL_SIZE // 2) / CELL_SIZE)
-    if not engine.is_valid_move(row, col):
+    if not engine.play_move(row, col):
         return
-    engine.make_move(row, col, turn)
-    draw_piece(row, col, turn)
+    update_board()
     engine.printboard()
-    if engine.checkwin(turn):
-        messagebox.showinfo("Game Over", f"{turn.capitalize()} wins!")
+    if engine.is_game_over():
+        winner = engine.get_winner()
+        if winner:
+            messagebox.showinfo("Game Over", f"{winner.capitalize()} wins!")
+        else:
+            messagebox.showinfo("Game Over", "Draw!")
         canvas.unbind("<Button-1>")
-        return
-    turn = "white" if turn == "black" else "black"
 
 
 def handle_click_user_vs_ai(event):
-    global turn, ai_agent
-    if turn == "black":
+    if engine.get_current_player() == "black":
         col = round((event.x - CELL_SIZE // 2) / CELL_SIZE)
         row = round((event.y - CELL_SIZE // 2) / CELL_SIZE)
-        if not engine.is_valid_move(row, col):
+        if not engine.play_move(row, col):
             return
-        engine.make_move(row, col, "black")
-        draw_piece(row, col, "black")
+        update_board()
         engine.printboard()
-        if engine.checkwin("black"):
-            messagebox.showinfo("Game Over", "Black wins!")
+        if engine.is_game_over():
+            winner = engine.get_winner()
+            if winner:
+                messagebox.showinfo("Game Over", f"{winner.capitalize()} wins!")
+            else:
+                messagebox.showinfo("Game Over", "Draw!")
             canvas.unbind("<Button-1>")
             return
-        turn = "white"
         canvas.after(500, ai_agent_move)
 
 
 def ai_agent_move():
-    global turn, ai_agent
-    if turn == "white":
+    if engine.get_current_player() == "white" and not engine.is_game_over():
         move = ai_agent.get_move()
         if move:
             row, col = move
-            engine.make_move(row, col, "white")
-            draw_piece(row, col, "white")
+            engine.play_move(row, col)
+            update_board()
             engine.printboard()
-            if engine.checkwin("white"):
-                messagebox.showinfo("Game Over", "White wins!")
+            if engine.is_game_over():
+                winner = engine.get_winner()
+                if winner:
+                    messagebox.showinfo("Game Over", f"{winner.capitalize()} wins!")
+                else:
+                    messagebox.showinfo("Game Over", "Draw!")
                 canvas.unbind("<Button-1>")
                 return
-            turn = "black"
+
+
+def set_player_indicator(mode, ai_strategy=None):
+    if mode == "User vs AI":
+        if ai_strategy == "Random":
+            player_indicator.config(text="Black: Human  |  White: RandomAgent")
+        elif ai_strategy == "Minimax":
+            player_indicator.config(text="Black: Human  |  White: MinimaxAgent")
+        elif ai_strategy == "Alpha-Beta Pruning":
+            player_indicator.config(text="Black: Human  |  White: AlphaBetaAgent")
+        else:
+            player_indicator.config(text="Black: Human  |  White: AI")
+    elif mode == "User vs User":
+        player_indicator.config(text="Black: Player 1  |  White: Player 2")
+    elif mode == "AI vs AI (Minimax vs AlphaBeta)":
+        player_indicator.config(text="Black: MinimaxAgent  |  White: AlphaBetaAgent")
+    else:
+        player_indicator.config(text="")
 
 
 def start_user_vs_ai(strategy, ai_strategy_window):
     ai_strategy_window.destroy()
     global ai_agent
+    engine.reset()
+    update_board()
     canvas.bind("<Button-1>", handle_click_user_vs_ai)
+    set_player_indicator("User vs AI", strategy)
     if strategy == "Random":
         ai_agent = RandomAgent(engine, "white")
     elif strategy == "Minimax":
@@ -111,12 +156,45 @@ def start_user_vs_ai(strategy, ai_strategy_window):
     window.deiconify()
 
 
+def ai_vs_ai_minmax_alphabeta_gui():
+    engine.reset()
+    update_board()
+    black_agent = MinimaxAgent(engine, "black")
+    white_agent = AlphaBetaAgent(engine, "white")
+    move_num = 1
+
+    def play_next():
+        nonlocal move_num
+        if engine.is_game_over():
+            winner = engine.get_winner()
+            if winner:
+                messagebox.showinfo("Game Over", f"{winner.capitalize()} wins!")
+            else:
+                messagebox.showinfo("Game Over", "Draw!")
+            return
+        if engine.get_current_player() == "black":
+            move = black_agent.get_move()
+            if move:
+                row, col = move
+                engine.play_move(row, col)
+        else:
+            move = white_agent.get_move()
+            if move:
+                row, col = move
+                engine.play_move(row, col)
+        update_board()
+        engine.printboard()
+        move_num += 1
+        window.after(200, play_next)
+
+    play_next()
+
+
 def start_game(mode):
     welcome_window.destroy()
-    if mode == "AI vs AI":
-        window.deiconify()
-        start_ai_vs_ai()
-    elif mode == "User vs AI":
+    engine.reset()
+    update_board()
+    if mode == "User vs AI":
         ai_strategy_window = tk.Toplevel()
         ai_strategy_window.title("Select AI Strategy")
         ai_strategy_window.geometry("300x200")
@@ -146,43 +224,13 @@ def start_game(mode):
         )
         alpha_beta_button.pack(pady=5)
     elif mode == "User vs User":
-        window.deiconify()
         canvas.bind("<Button-1>", handle_click)
-
-
-def start_ai_vs_ai():
-    global ai1, ai2, turn
-    ai1 = MinimaxAgent(engine, "black")
-    ai2 = AlphaBetaAgent(engine, "white")
-    turn = "black"
-    ai_vs_ai_move()
-
-
-def ai_vs_ai_move():
-    global turn, ai1, ai2
-    if turn == "black":
-        move = ai1.get_move()
-        if move:
-            row, col = move
-            engine.make_move(row, col, "black")
-            draw_piece(row, col, "black")
-            engine.printboard()
-            if engine.checkwin("black"):
-                messagebox.showinfo("Game Over", "Black wins!")
-                return
-            turn = "white"
-    else:
-        move = ai2.get_move()
-        if move:
-            row, col = move
-            engine.make_move(row, col, "white")
-            draw_piece(row, col, "white")
-            engine.printboard()
-            if engine.checkwin("white"):
-                messagebox.showinfo("Game Over", "White wins!")
-                return
-            turn = "black"
-    window.after(300, ai_vs_ai_move)
+        set_player_indicator("User vs User")
+        window.deiconify()
+    elif mode == "AI vs AI (Minimax vs AlphaBeta)":
+        set_player_indicator("AI vs AI (Minimax vs AlphaBeta)")
+        window.deiconify()
+        ai_vs_ai_minmax_alphabeta_gui()
 
 
 # --- Welcome Screen ---
@@ -194,10 +242,6 @@ welcome_window.geometry(f"300x200+{x}+{y}")
 
 welcome_label = tk.Label(welcome_window, text="Select Game Mode", font=("Arial", 14))
 welcome_label.pack(pady=20)
-ai_vs_ai_button = tk.Button(
-    welcome_window, text="AI vs AI", command=lambda: start_game("AI vs AI")
-)
-ai_vs_ai_button.pack(pady=5)
 user_vs_ai_button = tk.Button(
     welcome_window, text="User vs AI", command=lambda: start_game("User vs AI")
 )
@@ -206,6 +250,12 @@ user_vs_user_button = tk.Button(
     welcome_window, text="User vs User", command=lambda: start_game("User vs User")
 )
 user_vs_user_button.pack(pady=5)
+ai_vs_ai_button = tk.Button(
+    welcome_window,
+    text="AI vs AI (Minimax vs AlphaBeta)",
+    command=lambda: start_game("AI vs AI (Minimax vs AlphaBeta)"),
+)
+ai_vs_ai_button.pack(pady=5)
 window.withdraw()
 
 window.mainloop()
